@@ -1,6 +1,6 @@
 # Stocky: Product & Technical Spec (v1 draft)
 
-Status: **DRAFT, awaiting review.** No implementation has started. Section 13 lists the open questions.
+Status: **Implemented (v1).** Open questions in section 13 were resolved with the defaults used in this spec. Section 3.2 was extended after the first draft (onboarding and calorie calculator).
 
 ## 1. Overview
 
@@ -45,8 +45,22 @@ Project conventions stay as in `CLAUDE.md`: no semicolons, single quotes, print 
    - Returning user: go to the **Diary**.
 5. **Log out** (in Settings) returns to Login and clears local state.
 
-### 3.2 First run: set a daily goal
-A single-field screen asks for a daily calorie goal (default suggestion 2000). It can be changed later in Settings.
+### 3.2 First run: onboarding and calorie plan
+Shown at `/setup` until `users/{uid}.onboarded` is true. The router guard redirects there from every other screen.
+
+1. **Step 1, About you:** gender (female or male, used only in the formula), age (18–100), weight in lb, height in ft and in, and activity level (sedentary, lightly, moderately or very active).
+2. **Step 2, Your daily calories:** shows the calories per day for the chosen weekly goal (default: lose 1 lb/week). **Compare weekly goals** opens a right-hand sidebar listing every option with its calories, so the user can switch between them: lose 2, 1.5, 1 or 0.5 lb/week, maintain, or gain 0.5 or 1 lb/week.
+3. **Save plan** stores the answers, the weekly goal and the resulting `dailyGoal`, then opens the Diary.
+
+Calculation:
+- BMR by the Mifflin-St Jeor equation: `10·kg + 6.25·cm − 5·age + 5` (male) or `− 161` (female).
+- Maintenance = BMR × activity factor (1.2, 1.375, 1.55, 1.725).
+- Daily calories = maintenance + (lb per week × 3500 / 7).
+- Never below 1500 kcal (male) or 1200 kcal (female). When a pace hits that floor, the option is marked as raised to the minimum.
+
+The plan can be redone from Settings (**Update my plan**). The goal can also be set by hand in Settings. Both estimates are not medical advice, and the screen says so.
+
+The `users/{uid}` document gains `gender`, `age`, `weightLb`, `heightIn`, `activity`, `weeklyChangeLb`, `onboarded` and `updatedAt`.
 
 ### 3.3 Diary (home)
 1. Opens on today's date.

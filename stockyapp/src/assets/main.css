@@ -1,35 +1,102 @@
-@import './base.css';
+@import 'tailwindcss';
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+@theme {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
-}
-
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
-}
-
-@media (min-width: 1024px) {
+@layer base {
+  html,
   body {
-    display: flex;
-    place-items: center;
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
+    -webkit-tap-highlight-color: transparent;
   }
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
+  button,
+  a,
+  input,
+  select {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-green-700);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .btn {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-xl);
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    transition: background-color 0.15s;
+  }
+  .btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background-color: var(--color-green-700);
+    color: white;
+  }
+  .btn-primary:not(:disabled):active {
+    background-color: var(--color-green-800);
+  }
+  .btn-secondary {
+    background-color: white;
+    color: var(--color-slate-800);
+    border: 1px solid var(--color-slate-300);
+  }
+  .btn-secondary:not(:disabled):active {
+    background-color: var(--color-slate-100);
+  }
+  .btn-danger {
+    background-color: var(--color-red-700);
+    color: white;
+  }
+  .btn-ghost {
+    color: var(--color-green-800);
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-xl);
+    font-weight: 600;
+  }
+  .input {
+    width: 100%;
+    min-height: 44px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-slate-300);
+    background-color: white;
+    padding: 0.5rem 0.75rem;
+    /* 16px stops iOS Safari zooming into the field */
+    font-size: 1rem;
+  }
+  .input::placeholder {
+    color: var(--color-slate-500);
+  }
+  .label {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-slate-700);
+  }
+  .card {
+    border-radius: var(--radius-2xl);
+    background-color: white;
+    border: 1px solid var(--color-slate-200);
+  }
+  .error-text {
+    color: var(--color-red-700);
+    font-size: 0.875rem;
+  }
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem);
   }
 }
