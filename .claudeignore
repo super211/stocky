@@ -1,0 +1,4 @@
+stockapp/node_modules/
+stockapp/dist/
+*.log
+package-lock.json
