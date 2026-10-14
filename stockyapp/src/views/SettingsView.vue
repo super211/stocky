@@ -60,5 +60,5 @@ async function logout() {
         Log out
       </button>
     </section>
-  
+  </div>
 </template>
