@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const auth = vi.hoisted(() => ({
   isSignedIn: false,
   needsSetup: false,
+  profileError: '',
   init: () => Promise.resolve(),
 }))
 
@@ -12,6 +13,7 @@ vi.mock('@/stores/auth', () => ({ useAuthStore: () => auth }))
 const stub = { default: { template: '<div />' } }
 vi.mock('@/views/LoginView.vue', () => stub)
 vi.mock('@/views/SetupView.vue', () => stub)
+vi.mock('@/views/ProfileErrorView.vue', () => stub)
 vi.mock('@/views/DiaryView.vue', () => stub)
 vi.mock('@/views/AddFoodView.vue', () => stub)
 vi.mock('@/views/FoodsView.vue', () => stub)
@@ -28,6 +30,7 @@ async function go(path) {
 beforeEach(async () => {
   auth.isSignedIn = false
   auth.needsSetup = false
+  auth.profileError = ''
   // Park the router on a neutral, public route between tests.
   await router.replace('/login')
 })
@@ -87,5 +90,27 @@ describe('signed in but not onboarded', () => {
 
   it('allows the setup screen itself', async () => {
     expect(await go('/setup')).toBe('setup')
+  })
+})
+
+describe('signed in but the profile could not be loaded', () => {
+  beforeEach(() => {
+    auth.isSignedIn = true
+    auth.profileError = 'Failed to get document because the client is offline.'
+  })
+
+  it('shows the retry screen instead of onboarding or the app', async () => {
+    expect(await go('/')).toBe('profile-error')
+    expect(await go('/foods')).toBe('profile-error')
+    expect(await go('/setup')).toBe('profile-error')
+    expect(await go('/login')).toBe('profile-error')
+  })
+
+  it('leaves the retry screen once the profile has loaded', async () => {
+    expect(await go('/')).toBe('profile-error')
+    auth.profileError = ''
+    // Move off the current route first: pushing it again would skip the guard.
+    expect(await go('/foods')).toBe('foods')
+    expect(await go('/profile-error')).toBe('diary')
   })
 })

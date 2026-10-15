@@ -14,7 +14,8 @@ export async function saveProfile(uid, data) {
   if (snap.exists()) {
     await updateDoc(userRef(uid), { ...data, updatedAt: serverTimestamp() })
   } else {
-    await setDoc(userRef(uid), { ...data, createdAt: serverTimestamp() })
+    // merge: if the read above was stale, don't replace fields that are already there.
+    await setDoc(userRef(uid), { ...data, createdAt: serverTimestamp() }, { merge: true })
   }
 }
 

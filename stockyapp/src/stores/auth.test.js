@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 
 vi.mock('@/services/firebase', () => ({ auth: { currentUser: null } }))
@@ -17,7 +17,7 @@ vi.mock('@/services/users', () => ({
   saveProfile: vi.fn(),
 }))
 
-import { signOut } from 'firebase/auth'
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth'
 import { getProfile, saveDailyGoal, saveProfile } from '@/services/users'
 import { authMessage, useAuthStore } from './auth'
 
@@ -84,6 +84,16 @@ describe('actions', () => {
     expect(store.profile).toEqual({ onboarded: true, age: 30, dailyGoal: 1700 })
   })
 
+  it('setTheme saves the theme field and keeps it in the profile even if saving fails', async () => {
+    store.profile = { onboarded: true, dailyGoal: 2000 }
+    await store.setTheme('dark')
+    expect(saveProfile).toHaveBeenCalledWith('u1', { theme: 'dark' })
+    expect(store.profile.theme).toBe('dark')
+    saveProfile.mockRejectedValueOnce(new Error('offline'))
+    await expect(store.setTheme('light')).rejects.toThrow('offline')
+    expect(store.profile.theme).toBe('light')
+  })
+
   it('saveOnboarding stores the answers and marks onboarding done', async () => {
     const answers = { gender: 'female', age: 30, weeklyChangeLb: -1, dailyGoal: 1489 }
     await store.saveOnboarding(answers)
@@ -117,5 +127,78 @@ describe('afterSignIn', () => {
     expect(getProfile).toHaveBeenCalledWith('u9')
     expect(store.dailyGoal).toBe(2100)
     auth.currentUser = null
+  })
+})
+
+describe('when the profile cannot be loaded', () => {
+  const offline = new Error('Failed to get document because the client is offline.')
+  let firebaseAuth
+
+  beforeEach(async () => {
+    firebaseAuth = (await import('@/services/firebase')).auth
+    firebaseAuth.currentUser = { uid: 'u9' }
+  })
+
+  afterEach(() => {
+    firebaseAuth.currentUser = null
+  })
+
+  it('records the error instead of treating the user as not onboarded', async () => {
+    getProfile.mockRejectedValue(offline)
+    await store.afterSignIn()
+    expect(store.profileError).toBe(offline.message)
+    expect(store.profile).toBeNull()
+    // Sending an onboarded user to onboarding just because the read failed is the bug.
+    expect(store.needsSetup).toBe(false)
+  })
+
+  it('does not fail the sign-in when only the profile read fails', async () => {
+    signInWithEmailAndPassword.mockResolvedValue({})
+    getProfile.mockRejectedValue(offline)
+    await expect(store.signIn('a@b.c', 'secret1')).resolves.toBeUndefined()
+    expect(store.isSignedIn).toBe(true)
+    expect(store.profileError).toBeTruthy()
+  })
+
+  it('loadProfile clears the error once a retry succeeds', async () => {
+    getProfile.mockRejectedValueOnce(offline)
+    await store.afterSignIn()
+    getProfile.mockResolvedValueOnce({ onboarded: true, dailyGoal: 1800 })
+    await store.loadProfile()
+    expect(store.profileError).toBe('')
+    expect(store.needsSetup).toBe(false)
+    expect(store.dailyGoal).toBe(1800)
+  })
+
+  it('ignores a slow earlier load that finishes after a newer one', async () => {
+    let finishSlow
+    getProfile
+      .mockReturnValueOnce(new Promise((resolve) => (finishSlow = resolve)))
+      .mockResolvedValueOnce({ onboarded: true, dailyGoal: 1900 })
+    store.user = { uid: 'u9' }
+    const slow = store.loadProfile()
+    await store.loadProfile()
+    finishSlow(null)
+    await slow
+    expect(store.profile).toEqual({ onboarded: true, dailyGoal: 1900 })
+  })
+
+  it('init() records the error when the first profile read fails', async () => {
+    onAuthStateChanged.mockImplementation((_auth, callback) => {
+      callback({ uid: 'u9' })
+      return vi.fn()
+    })
+    getProfile.mockRejectedValue(offline)
+    await store.init()
+    expect(store.isSignedIn).toBe(true)
+    expect(store.profileError).toBe(offline.message)
+    expect(store.needsSetup).toBe(false)
+  })
+
+  it('logout clears the error', async () => {
+    getProfile.mockRejectedValue(offline)
+    await store.afterSignIn()
+    await store.logout()
+    expect(store.profileError).toBe('')
   })
 })

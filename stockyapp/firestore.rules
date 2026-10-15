@@ -24,7 +24,9 @@ service cloud.firestore {
         && (!('weeklyChangeLb' in request.resource.data)
           || (request.resource.data.weeklyChangeLb is number
             && request.resource.data.weeklyChangeLb >= -2
-            && request.resource.data.weeklyChangeLb <= 1));
+            && request.resource.data.weeklyChangeLb <= 1))
+        && (!('theme' in request.resource.data)
+          || request.resource.data.theme in ['light', 'dark', 'system']);
       allow delete: if false;
 
       match /foods/{foodId} {

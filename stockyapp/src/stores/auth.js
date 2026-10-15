@@ -31,17 +31,22 @@ export function authMessage(e) {
 }
 
 let initPromise = null
+// Bumped on every profile load so a slow, older read can't overwrite a newer one.
+let loadSeq = 0
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     // The users/{uid} document (body details, weekly goal, dailyGoal), or null if none yet.
     profile: null,
+    // Set when reading the profile failed (offline, blocked network, ...). Distinct from "no
+    // profile yet": a failed read must never be mistaken for a user who hasn't onboarded.
+    profileError: '',
   }),
   getters: {
     isSignedIn: (s) => Boolean(s.user),
     dailyGoal: (s) => s.profile?.dailyGoal ?? null,
-    needsSetup: (s) => Boolean(s.user) && !s.profile?.onboarded,
+    needsSetup: (s) => Boolean(s.user) && !s.profileError && !s.profile?.onboarded,
     uid: (s) => s.user?.uid ?? null,
   },
   actions: {
@@ -53,13 +58,8 @@ export const useAuthStore = defineStore('auth', {
           onAuthStateChanged(auth, async (user) => {
             this.user = user
             this.profile = null
-            if (user) {
-              try {
-                this.profile = await getProfile(user.uid)
-              } catch {
-                this.profile = null
-              }
-            }
+            this.profileError = ''
+            await this.loadProfile()
             if (first) {
               first = false
               resolve()
@@ -81,12 +81,32 @@ export const useAuthStore = defineStore('auth', {
       await signInWithPopup(auth, new GoogleAuthProvider())
       await this.afterSignIn()
     },
+    // Reads users/{uid} for the signed-in user. Failures are recorded in `profileError` rather
+    // than thrown or swallowed, so callers can tell "failed to load" from "has no profile".
+    async loadProfile() {
+      const seq = ++loadSeq
+      const uid = this.user?.uid
+      if (!uid) {
+        this.profile = null
+        this.profileError = ''
+        return
+      }
+      try {
+        const profile = await getProfile(uid)
+        if (seq !== loadSeq) return
+        this.profile = profile
+        this.profileError = ''
+      } catch (e) {
+        if (seq !== loadSeq) return
+        this.profile = null
+        this.profileError = e?.message || 'Could not load your profile.'
+      }
+    },
     // onAuthStateChanged loads the profile asynchronously; load it here too so the route guard
     // sees the right goal immediately after login.
     async afterSignIn() {
-      const user = auth.currentUser
-      this.user = user
-      this.profile = user ? await getProfile(user.uid) : null
+      this.user = auth.currentUser
+      await this.loadProfile()
     },
     resetPassword(email) {
       return sendPasswordResetEmail(auth, email)
@@ -94,6 +114,12 @@ export const useAuthStore = defineStore('auth', {
     async setDailyGoal(goal) {
       await saveDailyGoal(this.user.uid, goal)
       this.profile = { ...this.profile, dailyGoal: goal }
+    },
+    // Updates the in-memory profile first so a slower, older save can't flip the theme back; a
+    // failed save rejects but leaves the chosen theme in place.
+    async setTheme(theme) {
+      if (this.profile) this.profile = { ...this.profile, theme }
+      await saveProfile(this.user.uid, { theme })
     },
     // Saves the onboarding answers and the calorie goal calculated from them.
     async saveOnboarding(data) {

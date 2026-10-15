@@ -5,7 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="description" content="Stocky is a simple mobile-first calorie tracker." />
     <meta name="theme-color" content="#16a34a" />
+    <meta name="color-scheme" content="light dark" />
     <title>Stocky</title>
+    <script>
+      // Runs before first paint so the stored theme shows with no flash. Mirrors utils/theme.js.
+      try {
+        var t = localStorage.getItem('stocky.theme')
+        var dark =
+          t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.classList.toggle('dark', dark)
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+        if (dark) document.querySelector('meta[name="theme-color"]').content = '#0f172a'
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="app"></div>

@@ -17,7 +17,6 @@ Stocky is a mobile-first website for tracking daily calorie intake, in the style
 - Public or shared food database, barcode scanning.
 - Offline-first support, push notifications, native apps.
 - Exercise tracking, weight tracking, social features.
-- Dark mode.
 
 ## 2. Tech stack
 
@@ -96,6 +95,7 @@ The `users/{uid}` document gains `gender`, `age`, `weightLb`, `heightIn`, `activ
 
 ### 3.8 Settings
 - Change daily calorie goal.
+- Choose the appearance: Light, Dark or System (radio group, own card). System follows the OS `prefers-color-scheme` and reacts live when it changes. The change applies instantly; if saving to the profile fails the local choice is kept and a small error is shown.
 - Show the signed-in email.
 - Log out.
 
@@ -123,6 +123,7 @@ A fixed **bottom tab bar** on Diary, Foods, History and Settings. Add Food and L
 ```
 users/{uid}
   dailyGoal: number          // kcal
+  theme: 'light' | 'dark' | 'system'   // optional, default 'system'
   createdAt: timestamp
 
 users/{uid}/foods/{foodId}
@@ -195,7 +196,7 @@ Planned tightening before launch: validate field types, `calories >= 0`, `meal` 
 - Add to-the-edge safe-area padding (`env(safe-area-inset-bottom)`) for the tab bar.
 - Bottom sheets for the servings picker and entry editor.
 - Visible focus states and sufficient color contrast (WCAG AA).
-- No dark mode in v1.
+- Dark mode: a `dark` class on <html> re-points the palette in `assets/main.css`; `color-scheme` and `<meta name="theme-color">` follow the active theme. The theme is stored on `users/{uid}.theme` and mirrored in localStorage (`stocky.theme`) and applied before mount (inline script in index.html and main.js) so there is no flash. A loaded profile theme wins over localStorage; a profile without a theme keeps the local value. On logout the theme resets to System (localStorage cleared) so the next user never inherits the previous explicit choice. Firestore rules require `theme` to be light, dark or system when present.
 
 ## 10. Proposed project structure
 

@@ -4,7 +4,35 @@
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer base {
+  /*
+   * Dark theme: the `dark` class on <html> (see utils/theme.js) re-points the palette steps the
+   * app uses, so every `bg-white`, `text-slate-*`, `border-slate-*`, `fill-*` utility and the
+   * component classes below flip from this one place. Values are literals (not var() references)
+   * because the steps remap each other. Text contrast on cards (#0f172a): slate-400 ~6.9:1,
+   * slate-300 ~11:1, green-400 ~8.6:1, red-400 ~5.6:1, amber-400 ~9.5:1. Bar fills (green-600,
+   * red-600) and green-700 buttons are left alone (white text on green-700 is ~5:1).
+   */
+  html.dark {
+    --color-white: #0f172a;
+    --color-slate-50: #020617;
+    --color-slate-100: #1e293b;
+    --color-slate-200: #334155;
+    --color-slate-300: #64748b;
+    --color-slate-500: #94a3b8;
+    --color-slate-600: #94a3b8;
+    --color-slate-700: #cbd5e1;
+    --color-slate-800: #e2e8f0;
+    --color-slate-900: #f1f5f9;
+    --color-green-50: #052e16;
+    --color-green-800: #4ade80;
+    --color-red-50: #450a0a;
+    --color-red-700: #f87171;
+    --color-amber-800: #fbbf24;
+  }
+
   html,
   body {
     background-color: var(--color-slate-50);
@@ -22,6 +50,9 @@
   :focus-visible {
     outline: 2px solid var(--color-green-700);
     outline-offset: 2px;
+  }
+  html.dark :focus-visible {
+    outline-color: #4ade80;
   }
 }
 
@@ -46,10 +77,10 @@
     color: white;
   }
   .btn-primary:not(:disabled):active {
-    background-color: var(--color-green-800);
+    background-color: #166534;
   }
   .btn-secondary {
-    background-color: white;
+    background-color: var(--color-white);
     color: var(--color-slate-800);
     border: 1px solid var(--color-slate-300);
   }
@@ -57,7 +88,8 @@
     background-color: var(--color-slate-100);
   }
   .btn-danger {
-    background-color: var(--color-red-700);
+    /* literal: red-700 is re-pointed to a light red in dark mode */
+    background-color: #b91c1c;
     color: white;
   }
   .btn-ghost {
@@ -72,7 +104,8 @@
     min-height: 44px;
     border-radius: var(--radius-xl);
     border: 1px solid var(--color-slate-300);
-    background-color: white;
+    background-color: var(--color-white);
+    color: var(--color-slate-900);
     padding: 0.5rem 0.75rem;
     /* 16px stops iOS Safari zooming into the field */
     font-size: 1rem;
@@ -89,7 +122,7 @@
   }
   .card {
     border-radius: var(--radius-2xl);
-    background-color: white;
+    background-color: var(--color-white);
     border: 1px solid var(--color-slate-200);
   }
   .error-text {

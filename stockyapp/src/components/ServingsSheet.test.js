@@ -48,6 +48,17 @@ describe('ServingsSheet', () => {
     expect(wrapper.text()).toContain('400 kcal')
   })
 
+  it('shows the total for the quarter-step value that will be saved', async () => {
+    const onConfirm = vi.fn().mockResolvedValue()
+    const wrapper = render({ onConfirm })
+    await wrapper.get('#servings').setValue('1.4')
+    expect(wrapper.text()).toContain('300 kcal')
+    expect(wrapper.text()).not.toContain('280 kcal')
+    await buttonWith(wrapper, 'Add').trigger('click')
+    await flushPromises()
+    expect(onConfirm).toHaveBeenCalledWith({ servings: 1.5, meal: 'lunch' })
+  })
+
   it('confirms with the chosen servings and meal, then closes', async () => {
     const onConfirm = vi.fn().mockResolvedValue()
     const wrapper = render({ onConfirm, confirmLabel: 'Add to diary' })

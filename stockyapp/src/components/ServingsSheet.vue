@@ -30,7 +30,8 @@ const busy = ref(false)
 const error = ref('')
 const confirmingDelete = ref(false)
 
-const total = computed(() => totalFor(props.caloriesPerServing, servings.value))
+// Typed values are only snapped to quarter steps on save, so show the total for the saved value.
+const total = computed(() => totalFor(props.caloriesPerServing, clampServings(servings.value)))
 
 function step(delta) {
   servings.value = clampServings(servings.value + delta)
@@ -60,7 +61,8 @@ async function run(fn) {
   }
 }
 
-const confirm = () => run(() => props.onConfirm({ servings: servings.value, meal: meal.value }))
+const confirm = () =>
+  run(() => props.onConfirm({ servings: clampServings(servings.value), meal: meal.value }))
 const remove = () => run(() => props.onDelete())
 
 function onKey(e) {

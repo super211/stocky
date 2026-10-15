@@ -20,7 +20,8 @@ export function normalizeFood({ name, servingLabel, calories }) {
   return {
     name: String(name ?? '').trim(),
     servingLabel: String(servingLabel ?? '').trim(),
-    calories: Math.round(Number(calories)),
+    // Number('') is 0, so blank input must not be mistaken for "0 calories".
+    calories: String(calories ?? '').trim() === '' ? NaN : Math.round(Number(calories)),
   }
 }
 

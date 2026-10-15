@@ -20,6 +20,14 @@ describe('normalizeFood', () => {
   })
 })
 
+describe('normalizeFood blank calories', () => {
+  it('treats blank or whitespace calories as missing, not 0', () => {
+    expect(normalizeFood({ name: 'A', servingLabel: 'b', calories: '' }).calories).toBeNaN()
+    expect(normalizeFood({ name: 'A', servingLabel: 'b', calories: '   ' }).calories).toBeNaN()
+    expect(normalizeFood({ name: 'A', servingLabel: 'b', calories: '0' }).calories).toBe(0)
+  })
+})
+
 describe('validateFood', () => {
   const valid = { name: 'Apple', servingLabel: '1 medium', calories: 95 }
 

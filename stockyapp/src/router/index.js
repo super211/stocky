@@ -11,6 +11,12 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/profile-error',
+      name: 'profile-error',
+      component: () => import('@/views/ProfileErrorView.vue'),
+      meta: { profileError: true },
+    },
+    {
       path: '/setup',
       name: 'setup',
       component: () => import('@/views/SetupView.vue'),
@@ -54,7 +60,9 @@ router.beforeEach(async (to) => {
   await auth.init()
 
   if (!auth.isSignedIn) return to.meta.public ? true : { name: 'login' }
-  if (to.meta.public) return { name: 'diary' }
+  // The profile read failed: don't guess (that would show onboarding to an onboarded user).
+  if (auth.profileError) return to.meta.profileError ? true : { name: 'profile-error' }
+  if (to.meta.public || to.meta.profileError) return { name: 'diary' }
   if (auth.needsSetup && !to.meta.setup) return { name: 'setup' }
   return true
 })
